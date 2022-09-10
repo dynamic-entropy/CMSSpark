@@ -120,6 +120,9 @@ function run_spark_and_mongo_import() {
     spark-submit "${spark_submit_args[@]}" "${script_dir}/../src/python/CMSSpark/${spark_py_file}" \
         "${py_input_args[@]}" >>"${LOG_DIR}/${log_file}" 2>&1
 
+    #debug
+    echo "Successful spark submit"
+
     util4logi "spark job for ${spark_py_file} finished"
     util4logi "last 10 lines of Spark job log"
     tail -10 "${LOG_DIR}/${log_file}"
@@ -138,11 +141,20 @@ function run_spark_and_mongo_import() {
     # Delete if old one exists
     rm -rf "$local_json_merge_file"
 
+    #debug
+    echo "Attempting hadoop merge"
+
     # Copy files from HDFS to LOCAL directory as a single file
     hadoop fs -getmerge "$hdfs_out_dir.json" "$local_json_merge_file"
 
+    #debug
+    echo "Trying mongo import"
+
     mongoimport --drop --type=json --authenticationDatabase "admin" --db "$MONGOWRITEDB" \
         --collection "$collection" --file "$local_json_merge_file" "$MONGOURI"
+
+    #debug
+    echo "mongo import successful"
 
     util4logi "mongoimport finished."
     # ------------------------------------------------------------------------------------------------   POST DELETIONS
