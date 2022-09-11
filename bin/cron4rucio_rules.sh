@@ -109,16 +109,26 @@ function run_spark_and_mongo_import() {
 
     util4logi "spark job for ${spark_py_file} starting"
     export PYTHONPATH=$script_dir/../src/python:$PYTHONPATH
+
+    util4logi "spark job for ${spark_py_file} debug stmt 1"
     spark_submit_args=(
         --master yarn --conf spark.ui.showConsoleProgress=false --conf spark.sql.session.timeZone=UTC --conf "spark.driver.bindAddress=0.0.0.0"
         --driver-memory=8g --executor-memory=8g --packages org.apache.spark:spark-avro_2.12:3.2.1
         --conf "spark.driver.host=${K8SHOST}" --conf "spark.driver.port=${PORT1}" --conf "spark.driver.blockManager.port=${PORT2}"
     )
+    util4logi "spark job for ${spark_py_file} debug stmt 2"
     py_input_args=(--hdfs_out_dir "$hdfs_out_dir")
+
+    util4logi "spark job for ${spark_py_file} debug stmt 3"
+
+    util4logi "${spark_submit_args[@]}" "${script_dir}/../src/python/CMSSpark/${spark_py_file}" \
+        "${py_input_args[@]}" >>"${LOG_DIR}/${log_file}"
+
+    util4logi "spark job for ${spark_py_file} debug stmt 4" 
 
     # Run
     spark-submit "${spark_submit_args[@]}" "${script_dir}/../src/python/CMSSpark/${spark_py_file}" \
-        "${py_input_args[@]}" >>"${LOG_DIR}/${log_file}" 2>&1
+        "${py_input_args[@]}" >>"${LOG_DIR}/${log_file}" 
 
     #debug
     echo "Successful spark submit"
