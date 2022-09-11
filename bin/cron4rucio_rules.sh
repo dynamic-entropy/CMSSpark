@@ -126,9 +126,12 @@ function run_spark_and_mongo_import() {
 
     util4logi "spark job for ${spark_py_file} debug stmt 4" 
 
+    echo "${spark_submit_args[@]}" "${script_dir}/../src/python/CMSSpark/${spark_py_file}" \
+        "${py_input_args[@]}"
+
     # Run
     spark-submit "${spark_submit_args[@]}" "${script_dir}/../src/python/CMSSpark/${spark_py_file}" \
-        "${py_input_args[@]}" >>"${LOG_DIR}/${log_file}" 
+        "${py_input_args[@]}"
 
     #debug
     echo "Successful spark submit"
