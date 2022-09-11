@@ -112,7 +112,7 @@ def get_dataset_file_map(spark):
         
     return dataset_file_map
 
-def get_df_filtered(df_map, df_locks, df_rses, df_rules):
+def get_df_filtered(spark, df_map, df_locks, df_rses, df_rules):
     
     df_filtered = df_map.alias("map").join(df_locks.alias("lock"), col("map.file")==col("lock.file_name"), "right")\
         .na.fill({"dataset":"/UnknownBlock", "block":"/UnknownBlock#unknown", "data_tier":"UnknownBlock"})\
