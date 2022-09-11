@@ -26,7 +26,7 @@ from pyspark.sql.types import (
     DecimalType
 )
 
-
+print("Running spark script")
 TODAY = datetime.today().strftime('%Y-%m-%d')
 HDFS_RUCIO_LOCKS = f"/project/awg/cms/rucio/{TODAY}/locks/part*.avro"
 HDFS_RUCIO_RSES = f'/tmp/cmsmonit/rucio_daily_stats-{TODAY}/RSES/part*.avro'
@@ -141,6 +141,9 @@ def main(hdfs_out_dir):
     """
 
     # HDFS output file format. If you change, please modify bin/cron4rucio_ds_mongo.sh accordingly.
+
+    print("Running main function script")
+
     write_format = 'json'
     write_mode = 'overwrite'
 
