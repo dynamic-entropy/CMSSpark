@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import click
 import pandas as pd
 
@@ -27,7 +27,7 @@ from pyspark.sql.types import (
 )
 
 print("Running spark script")
-TODAY = datetime.today().strftime('%Y-%m-%d')
+TODAY = (datetime.today()-timedelta(1)).strftime('%Y-%m-%d')
 HDFS_RUCIO_LOCKS = f"/project/awg/cms/rucio/{TODAY}/locks/part*.avro"
 HDFS_RUCIO_RSES = f'/tmp/cmsmonit/rucio_daily_stats-{TODAY}/RSES/part*.avro'
 HDFS_RUCIO_CONTENTS = f"/project/awg/cms/rucio/{TODAY}/contents/part*.avro"
