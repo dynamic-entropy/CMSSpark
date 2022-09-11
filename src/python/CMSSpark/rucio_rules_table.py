@@ -143,6 +143,11 @@ def main(hdfs_out_dir):
     # HDFS output file format. If you change, please modify bin/cron4rucio_ds_mongo.sh accordingly.
 
     print("Running main function script")
+    print("\n\n*************\n\n")
+    # 
+    # 
+    # 
+    # 
 
     write_format = 'json'
     write_mode = 'overwrite'
