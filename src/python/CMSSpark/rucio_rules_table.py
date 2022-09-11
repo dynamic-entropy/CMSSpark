@@ -161,6 +161,7 @@ def main(hdfs_out_dir):
     df_filtered.write.save(path=filepath, format=write_format, mode=write_mode)
 
     print(f"saved file to {hdfs_out_dir}")
+    print("\n\n*************\n\n")
 
 
 if __name__ == '__main__':
