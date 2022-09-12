@@ -135,7 +135,7 @@ def get_df_filtered(spark, df_map, df_locks, df_rses, df_rules):
 
 @click.command()
 @click.option('--hdfs_out_dir', default=None, type=str, required=True,
-              help='I.e. /tmp/${KERBEROS_USER}/rucio_ds_mongo/$(date +%Y-%m-%d) ')
+              help='I.e. /tmp/${KERBEROS_USER}/ruciods/$(date +%Y-%m-%d) ')
 def main(hdfs_out_dir):
     """Main function that run Spark dataframe creations and save results to HDFS directory as JSON lines
     """
@@ -152,7 +152,7 @@ def main(hdfs_out_dir):
     write_format = 'json'
     write_mode = 'overwrite'
 
-    spark = get_spark_session(app_name='cms-monitoring-rucio-detailed-datasets-for-mongo')
+    spark = get_spark_session(app_name='cms-monitoring-rucio-rules')
     # Set TZ as UTC. Also set in the spark-submit confs.
     spark.conf.set("spark.sql.session.timeZone", "UTC")
 
