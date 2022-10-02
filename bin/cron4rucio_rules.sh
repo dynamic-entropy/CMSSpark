@@ -149,7 +149,7 @@ function run_spark_and_mongo_import() {
     # Create dir silently
     mkdir -p "$local_json_merge_dir"
 
-    local_json_merge_file=$local_json_merge_dir/"${collection}.json"
+    local_json_merge_file=$local_json_merge_dir/"${collection}"
 
     # Delete if old one exists
     rm -rf "$local_json_merge_file"
@@ -158,7 +158,7 @@ function run_spark_and_mongo_import() {
     echo "Attempting hadoop merge"
 
     # Copy files from HDFS to LOCAL directory as a single file
-    hadoop fs -getmerge "$hdfs_out_dir.json" "$local_json_merge_file"
+    hadoop fs -getmerge "$hdfs_out_dir" "$local_json_merge_file"
 
     #debug
     echo "Trying mongo import"

@@ -168,7 +168,7 @@ def main(hdfs_out_dir):
     df_rses = get_df_rses(spark)
     df_rules = get_df_rules(spark)
 
-    filepath = hdfs_out_dir + ".json"
+    filepath = hdfs_out_dir
     df_filtered = get_df_filtered(spark, df_map, df_locks, df_rses, df_rules)
     df_filtered.write.save(path=filepath, format=write_format, mode=write_mode)
 
