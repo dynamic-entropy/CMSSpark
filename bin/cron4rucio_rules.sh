@@ -107,38 +107,38 @@ function run_spark_and_mongo_import() {
     collection=$4
     yesterday_hdfs_out_dir=$5
 
-    util4logi "spark job for ${spark_py_file} starting"
-    export PYTHONPATH=$script_dir/../src/python:$PYTHONPATH
+    # util4logi "spark job for ${spark_py_file} starting"
+    # export PYTHONPATH=$script_dir/../src/python:$PYTHONPATH
 
-    util4logi "spark job for ${spark_py_file} debug stmt 1"
-    spark_submit_args=(
-        --master yarn --conf spark.ui.showConsoleProgress=false --conf spark.sql.session.timeZone=UTC --conf "spark.driver.bindAddress=0.0.0.0"
-        --driver-memory=8g --executor-memory=8g --packages org.apache.spark:spark-avro_2.12:3.2.1
-        --conf "spark.driver.host=${K8SHOST}" --conf "spark.driver.port=${PORT1}" --conf "spark.driver.blockManager.port=${PORT2}"
-    )
-    util4logi "spark job for ${spark_py_file} debug stmt 2"
-    py_input_args=(--hdfs_out_dir "$hdfs_out_dir")
+    # util4logi "spark job for ${spark_py_file} debug stmt 1"
+    # spark_submit_args=(
+    #     --master yarn --conf spark.ui.showConsoleProgress=false --conf spark.sql.session.timeZone=UTC --conf "spark.driver.bindAddress=0.0.0.0"
+    #     --driver-memory=8g --executor-memory=8g --packages org.apache.spark:spark-avro_2.12:3.2.1
+    #     --conf "spark.driver.host=${K8SHOST}" --conf "spark.driver.port=${PORT1}" --conf "spark.driver.blockManager.port=${PORT2}"
+    # )
+    # util4logi "spark job for ${spark_py_file} debug stmt 2"
+    # py_input_args=(--hdfs_out_dir "$hdfs_out_dir")
 
-    util4logi "spark job for ${spark_py_file} debug stmt 3"
+    # util4logi "spark job for ${spark_py_file} debug stmt 3"
 
-    util4logi "${spark_submit_args[@]}" "${script_dir}/../src/python/CMSSpark/${spark_py_file}" \
-        "${py_input_args[@]}" >>"${LOG_DIR}/${log_file}"
+    # util4logi "${spark_submit_args[@]}" "${script_dir}/../src/python/CMSSpark/${spark_py_file}" \
+    #     "${py_input_args[@]}" >>"${LOG_DIR}/${log_file}"
 
-    util4logi "spark job for ${spark_py_file} debug stmt 4" 
+    # util4logi "spark job for ${spark_py_file} debug stmt 4" 
 
-    echo "${spark_submit_args[@]}" "${script_dir}/../src/python/CMSSpark/${spark_py_file}" \
-        "${py_input_args[@]}"
+    # echo "${spark_submit_args[@]}" "${script_dir}/../src/python/CMSSpark/${spark_py_file}" \
+    #     "${py_input_args[@]}"
 
-    # Run
-    spark-submit "${spark_submit_args[@]}" "${script_dir}/../src/python/CMSSpark/${spark_py_file}" \
-        "${py_input_args[@]}"
+    # # Run
+    # spark-submit "${spark_submit_args[@]}" "${script_dir}/../src/python/CMSSpark/${spark_py_file}" \
+    #     "${py_input_args[@]}"
 
-    #debug
-    echo "Successful spark submit"
+    # #debug
+    # echo "Successful spark submit"
 
-    util4logi "spark job for ${spark_py_file} finished"
-    util4logi "last 10 lines of Spark job log"
-    tail -10 "${LOG_DIR}/${log_file}"
+    # util4logi "spark job for ${spark_py_file} finished"
+    # util4logi "last 10 lines of Spark job log"
+    # tail -10 "${LOG_DIR}/${log_file}"
 
     # Give read access to new dumps for all users
     hadoop fs -chmod -R o+rx "$hdfs_out_dir"/
@@ -155,10 +155,16 @@ function run_spark_and_mongo_import() {
     rm -rf "$local_json_merge_file"
 
     #debug
+    echo "*******"
+
     echo "Attempting hadoop merge"
+
+    echo $hdfs_out_dir && echo $local_json_merge_file
 
     # Copy files from HDFS to LOCAL directory as a single file
     hadoop fs -getmerge "$hdfs_out_dir" "$local_json_merge_file"
+
+    echo "*******"
 
     #debug
     echo "Trying mongo import"
