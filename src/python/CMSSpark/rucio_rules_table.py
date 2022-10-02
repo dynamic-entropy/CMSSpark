@@ -29,7 +29,7 @@ from pyspark.sql.types import (
 print("Running spark script")
 TODAY = (datetime.today()-timedelta(1)).strftime('%Y-%m-%d')
 HDFS_RUCIO_LOCKS = f"/project/awg/cms/rucio/{TODAY}/locks/part*.avro"
-HDFS_RUCIO_RSES = f'/tmp/cmsmonit/rucio_daily_stats-{TODAY}/RSES/part*.avro'
+HDFS_RUCIO_RSES = f"/project/awg/cms/rucio/{TODAY}/rses/part*.avro"
 HDFS_RUCIO_CONTENTS = f"/project/awg/cms/rucio/{TODAY}/contents/part*.avro"
 HDFS_RUCIO_RULES = f"/project/awg/cms/rucio/{TODAY}/rules/part*.avro"
 
@@ -65,69 +65,76 @@ def get_df_rses(spark):
 
 def get_df_contents(spark):
     return spark.read.format('avro').load(HDFS_RUCIO_CONTENTS) \
-        .filter(col("scope")=="cms")\
+        .filter(col("scope") == "cms")\
         .select(['name', 'child_name', 'did_type', 'child_type'])
 
 
-#TODO: Do we need to consider replicating rules here?
+# TODO: Do we need to consider replicating rules here?
 def get_df_rules(spark):
     return spark.read.format("avro").load(HDFS_RUCIO_RULES)\
-        .filter(col('state')=='O') \
+        .filter(col('state') == 'O') \
         .withColumn("rule_id", lower(_hex(col("id")))) \
         .select(["rule_id", "account", "did_type", "rse_expression", "copies"])
 
 
-#get actual dataset names here
-#We drop the datasets names with /CONTAINER - these are created for data transfer challenges and deletion campaigns
+# get actual dataset names here
+# We drop the datasets names with /CONTAINER - these are created for data transfer challenges and deletion campaigns
 # If needed we deal with them separately
 def get_dataset_file_map(spark):
     df_contents = get_df_contents(spark)
-    
-    block_file_map = df_contents.filter(col("child_type")=="F")\
-                                  .filter(col("name").endswith("#DATASET")==False)\
-                                  .filter(col("name").endswith("#DATASET2")==False)\
-                                  .withColumnRenamed("child_name", "file")\
-                                  .withColumnRenamed("name", "block")
-                                 
-        
-    dataset_block_map = df_contents.filter(col("child_type")=="D")\
-                                  .filter(col("name").endswith("/CONTAINER")==False)\
-                                  .withColumnRenamed("child_name", "block")\
-                                  .withColumnRenamed("name", "dataset")
-        
+
+    block_file_map = df_contents.filter(col("child_type") == "F")\
+        .filter(col("name").endswith("#DATASET") == False)\
+        .filter(col("name").endswith("#DATASET2") == False)\
+        .withColumnRenamed("child_name", "file")\
+        .withColumnRenamed("name", "block")
+
+    dataset_block_map = df_contents.filter(col("child_type") == "D")\
+        .filter(col("name").endswith("/CONTAINER") == False)\
+        .withColumnRenamed("child_name", "block")\
+        .withColumnRenamed("name", "dataset")
+
     windowPartitionDataset = Window.partitionBy("dataset")
-    #we do a right join to capture files that do not map to a dataset
-    #later we club these files in a Unknown Container category
-    dataset_file_map = dataset_block_map.alias("dbm").join(block_file_map.alias("bfm"), col("dbm.block")==col("bfm.block"), "right")\
-                                  .na.fill({"dataset":"/UnknownDataset"})\
-                                  .withColumn("data_tier", func.element_at(func.split("dataset","/"),-1))\
-                                  .withColumn("file_count_contents",  func.count(col("dataset")).over(windowPartitionDataset))\
-                                  .select(["dataset", "bfm.block", "bfm.file", "data_tier", "file_count_contents"])
-    
-    #We are creating some dummy datasets here (derived from block names), to get data_tier info for files as much as possible
+    # we do a right join to capture files that do not map to a dataset
+    # later we club these files in a Unknown Container category
+    dataset_file_map = dataset_block_map.alias("dbm").join(block_file_map.alias("bfm"), col("dbm.block") == col("bfm.block"), "right")\
+        .na.fill({"dataset": "/UnknownDataset"})\
+        .withColumn("data_tier", func.element_at(func.split("dataset", "/"), -1))\
+        .withColumn("file_count_contents",  func.count(col("dataset")).over(windowPartitionDataset))\
+        .select(["dataset", "bfm.block", "bfm.file", "data_tier", "file_count_contents"])
+
+    # We are creating some dummy datasets here (derived from block names), to get data_tier info for files as much as possible
 #     df_dataset_file_map = df_contents_file\
 #                                 .withColumn("dataset", func.element_at(func.split("name","#"),1))\
 #                                 .withColumn("data_tier", func.element_at(func.split("dataset","/"),-1))\
 #                                 .select(["file", "dataset", "data_tier"])
-        
+
     return dataset_file_map
 
+
 def get_df_filtered(spark, df_map, df_locks, df_rses, df_rules):
-    
-    df_filtered = df_map.alias("map").join(df_locks.alias("lock"), col("map.file")==col("lock.file_name"), "right")\
-        .na.fill({"dataset":"/UnknownBlock", "block":"/UnknownBlock#unknown", "data_tier":"UnknownBlock"})\
-        .filter(col("data_tier").isin(["UnknownBlock", "UnknownDataset"])==False)\
-        .join(df_rses.alias("rse"), col("lock.rse_id")==col("rse.rse_id"))\
+
+    df_filtered = df_map.alias("map").join(df_locks.alias("lock"), col("map.file") == col("lock.file_name"), "right")\
+        .na.fill({"dataset": "/UnknownBlock", "block": "/UnknownBlock#unknown", "data_tier": "UnknownBlock"})\
+        .filter(col("data_tier").isin(["UnknownBlock", "UnknownDataset"]) == False)\
+        .join(df_rses.alias("rse"), col("lock.rse_id") == col("rse.rse_id"))\
         .select(["dataset", "rse_name", "data_tier", "file_name", "file_size", "block", "rule_id", "account", "file_count_contents"])\
-        .groupby(["dataset", "rse_name", "data_tier", "file_count_contents"]).agg(func.countDistinct("file_name").alias("file_count"), 
-                                                        func.count("file_name").alias("total_file_locks_count"),
-                                                        func.sum("file_size").alias("file_sum"),
-                                                        func.countDistinct("block").alias("block_count"),
-                                                        func.countDistinct("rule_id").alias("ruleid_count"),
-                                                        collect_set("rule_id").alias("ruleid_set"),
-                                                        func.countDistinct("account").alias("account_count"),
-                                                        collect_set("account").alias("account_set"),
-            )\
+        .groupby(["dataset", "rse_name", "data_tier", "file_count_contents"]).agg(func.countDistinct("file_name").alias("file_count"),
+                                                                                  func.count("file_name").alias(
+                                                                                      "total_file_locks_count"),
+                                                                                  func.sum("file_size").alias(
+                                                                                      "file_sum"),
+                                                                                  func.countDistinct(
+                                                                                      "block").alias("block_count"),
+                                                                                  func.countDistinct("rule_id").alias(
+                                                                                      "ruleid_count"),
+                                                                                  collect_set("rule_id").alias(
+                                                                                      "ruleid_set"),
+                                                                                  func.countDistinct("account").alias(
+                                                                                      "account_count"),
+                                                                                  collect_set("account").alias(
+                                                                                      "account_set"),
+                                                                                  )\
         .withColumn("percent_count", func.col("file_count")*100/func.col("file_count_contents"))
 
     return df_filtered
@@ -144,10 +151,10 @@ def main(hdfs_out_dir):
 
     print("Running main function script")
     print("\n\n*************\n\n")
-    # 
-    # 
-    # 
-    # 
+    #
+    #
+    #
+    #
 
     write_format = 'json'
     write_mode = 'overwrite'
