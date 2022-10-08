@@ -110,6 +110,7 @@ function run_spark_and_mongo_import() {
     util4logi "spark job for ${spark_py_file} starting"
     export PYTHONPATH=$script_dir/../src/python:$PYTHONPATH
 
+    # TODO: Remove unncessary print statements 
     util4logi "spark job for ${spark_py_file} debug stmt 1"
     spark_submit_args=(
         --master yarn --conf spark.ui.showConsoleProgress=false --conf spark.sql.session.timeZone=UTC --conf "spark.driver.bindAddress=0.0.0.0"
@@ -180,7 +181,7 @@ function run_spark_and_mongo_import() {
 # Arrange a temporary HDFS directory that current Kerberos user can use for datasets collection
 datasets_hdfs_out="/tmp/${KERBEROS_USER}/rucio_ds_rules/$(date +%Y-%m-%d)"
 datasets_hdfs_out_yesterday="/tmp/${KERBEROS_USER}/rucio_ds_rules/$(date -d "yesterday" '+%Y-%m-%d')"
-run_spark_and_mongo_import "rucio_rules_table.py" "$datasets_hdfs_out" "spark-job-datasets.log" "datasets_rules_script" "$datasets_hdfs_out_yesterday" 2>&1
+run_spark_and_mongo_import "rucio_rules_table.py" "$datasets_hdfs_out" "spark-job-datasets.log" "datasets_cmsrdev" "$datasets_hdfs_out_yesterday" 2>&1
 
 # -------------------------------------------------------------------------------------------------------------- FINISH
 # Print process wall clock time
